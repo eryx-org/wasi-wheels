@@ -1,0 +1,44 @@
+diff --git a/mesonbuild/compilers/mixins/clike.py b/mesonbuild/compilers/mixins/clike.py
+index d2eb6119b..0ca2f6da6 100644
+--- a/mesonbuild/compilers/mixins/clike.py
++++ b/mesonbuild/compilers/mixins/clike.py
+@@ -74,20 +74,25 @@ class CLikeCompilerArgs(arglist.CompilerArgs):
+         # all act like (or are) gnu ld
+         # TODO: this could probably be added to the DynamicLinker instead
+         if isinstance(self.compiler.linker, (GnuLikeDynamicLinkerMixin, SolarisDynamicLinker, CompCertDynamicLinker)):
+-            group_start = -1
+-            group_end = -1
+-            for i, each in enumerate(new):
+-                if not GROUP_FLAGS.search(each):
+-                    continue
+-                group_end = i
+-                if group_start < 0:
+-                    # First occurrence of a library
+-                    group_start = i
+-            # Only add groups if there are multiple libraries.
+-            if group_end > group_start >= 0:
+-                # Last occurrence of a library
+-                new.insert(group_end + 1, '-Wl,--end-group')
+-                new.insert(group_start, '-Wl,--start-group')
++            # wasm-ld (selected via LLD on wasm targets) does not accept
++            # --start-group/--end-group, and the WASI_WHEELS_NO_LINK_GROUPS
++            # env var lets us opt out of them for cross-compiles that use it.
++            import os as _os
++            if not _os.environ.get('WASI_WHEELS_NO_LINK_GROUPS'):
++                group_start = -1
++                group_end = -1
++                for i, each in enumerate(new):
++                    if not GROUP_FLAGS.search(each):
++                        continue
++                    group_end = i
++                    if group_start < 0:
++                        # First occurrence of a library
++                        group_start = i
++                # Only add groups if there are multiple libraries.
++                if group_end > group_start >= 0:
++                    # Last occurrence of a library
++                    new.insert(group_end + 1, '-Wl,--end-group')
++                    new.insert(group_start, '-Wl,--start-group')
+         # Remove system/default include paths added with -isystem
+         default_dirs = self.compiler.get_default_include_dirs()
+         if default_dirs:
