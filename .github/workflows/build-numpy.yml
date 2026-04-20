@@ -66,14 +66,20 @@ jobs:
         run: make -j"$(nproc)" "$(pwd)/build/numpy-wasi.tar.gz"
 
       - name: Inspect numpy tarball
+        id: inspect
         run: |
           ls -lh build/numpy-wasi.tar.gz
           tar tzf build/numpy-wasi.tar.gz | grep -E "version.py$|\.so$" | head -20
+          # Extract numpy version from the built wheel filename (e.g. numpy-2.4.4-...).
+          wheel=$(ls numpy/src/wheels/numpy-*.whl | head -1)
+          version=$(basename "$wheel" | sed -E 's|^numpy-([^-]+)-.*|\1|')
+          echo "numpy_version=${version}" >> "$GITHUB_OUTPUT"
+          echo "numpy version: ${version}"
 
       - name: Upload numpy artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: numpy-wasi
+          name: numpy-${{ steps.inspect.outputs.numpy_version }}-wasi
           path: build/numpy-wasi.tar.gz
 
       - name: Install eryx-precompile
