@@ -1,3 +1,5 @@
 build
 **/venv
 multidict/929.patch
+numpy/cxa_stubs.o
+.claude/
